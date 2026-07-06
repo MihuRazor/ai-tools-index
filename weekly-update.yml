@@ -1,0 +1,43 @@
+name: Weekly AI Tools Update
+
+on:
+  schedule:
+    # 每周一凌晨 2:00 UTC（北京时间周一 10:00）运行
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+    # 允许手动触发
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    name: Crawl and Update Tools
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install supabase requests
+
+      - name: Run crawler
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python crawler.py
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crawler-error-log
+          path: |
+            crawler.log
+            *.log
